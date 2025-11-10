@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    container_name: zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_INTERNAL:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092,PLAINTEXT_INTERNAL://kafka:29092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+
+  init-kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    depends_on:
+      - kafka
+    entrypoint: [ '/bin/sh', '-c' ]
+    command: |
+      "
+      # blocks until kafka is reachable
+      kafka-topics --bootstrap-server kafka:29092 --list
+
+      echo -e 'Creating kafka topic...'
+      kafka-topics --bootstrap-server kafka:29092 --create --if-not-exists --topic ticker_events --replication-factor 1 --partitions 1
+
+      echo -e 'Successfully created the topic.'
+      "
+
+  app:
+    build: .
+    container_name: tickerflow_app
+    depends_on:
+      - init-kafka
+    volumes:
+      - ./src:/app/src
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+      # You should pass your Alpaca API keys as environment variables
+      # - API_KEY=${API_KEY}
+      # - SECRET_KEY=${SECRET_KEY}
+    command: poetry run python src/backend/tickerflow.py

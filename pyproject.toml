@@ -1,0 +1,21 @@
+[project]
+name = "tickerflow"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "Samuel Woldegiorgies",email = "45132231+Samuel-T-W@users.noreply.github.com"}
+]
+readme = "README.md"
+requires-python = ">=3.12,<4.0.0"
+dependencies = [
+    "alpaca-py (>=0.42.2,<0.43.0)",
+    "python-dotenv (>=1.1.1,<2.0.0)"
+]
+
+[tool.poetry]
+packages = [{include = "tickerflow", from = "src"}]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
