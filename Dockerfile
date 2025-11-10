@@ -1,5 +1,5 @@
 # Use an official Python runtime as a parent image
-FROM python:3.11-slim
+FROM python:3.12-slim
 
 # Prevent Python from writing .pyc files and buffer stdout
 ENV PYTHONDONTWRITEBYTECODE 1
@@ -16,7 +16,7 @@ RUN pip install poetry
 COPY poetry.lock pyproject.toml /app/
 
 # Install project dependencies (excluding dev dependencies)
-RUN poetry install --no-root --no-dev
+RUN poetry install --no-root
 
 # Copy the rest of the application source code
 COPY . /app/

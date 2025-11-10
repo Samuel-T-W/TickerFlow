@@ -46,9 +46,18 @@ services:
       - init-kafka
     volumes:
       - ./src:/app/src
+    env_file:
+      - .env
     environment:
       - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
-      # You should pass your Alpaca API keys as environment variables
-      # - API_KEY=${API_KEY}
-      # - SECRET_KEY=${SECRET_KEY}
-    command: poetry run python src/backend/tickerflow.py
+    command: poetry run python -m src.backend.tickerflow
+
+  kafdrop:
+    image: obsidiandynamics/kafdrop
+    container_name: kafdrop
+    ports:
+      - "19000:9000"
+    environment:
+      KAFKA_BROKERCONNECT: "kafka:29092"
+    depends_on:
+      - kafka

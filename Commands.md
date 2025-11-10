@@ -11,3 +11,20 @@ poetry run python <path_to_file> Replace `<path_to_file>` with the actual path t
 ## Running the Alpaca API Test Script
 
 poetry run python scripts/test_alpaca_api.py
+
+
+## running ticker flow backend python module (use -m so relative imports work)
+poetry run python -m src.backend.tickerflow
+
+
+# running docker (-d detached mode)
+docker-compose up -d --build
+
+# shutting down docker 
+docker-compose down
+
+# view logs for docker 
+docker-compose logs -f
+
+# restarting only app after changes to src
+docker-compose restart app

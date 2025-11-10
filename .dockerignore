@@ -8,3 +8,16 @@ venv/
 .env
 .git
 .idea
+
+
+# ignore tests
+tests/
+
+# ignore scripts
+scripts/
+
+# design docs
+Design.pdf
+
+# also readme's etc ..
+.md

@@ -1,5 +1,4 @@
 import os
-from typing import Set
 
 from alpaca.data.live import StockDataStream 
 from alpaca.data.enums import DataFeed
