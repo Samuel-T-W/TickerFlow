@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   zookeeper:
     image: confluentinc/cp-zookeeper:7.5.0
@@ -51,6 +49,68 @@ services:
     environment:
       - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
     command: poetry run python -m src.backend.tickerflow
+
+  jobmanager:
+    build:
+      context: .
+      dockerfile: flink.Dockerfile
+    container_name: flink_jobmanager
+    ports:
+      - "8081:8081"
+    command: jobmanager
+    environment:
+      - |
+        FLINK_PROPERTIES=
+        jobmanager.rpc.address: jobmanager
+        parallelism.default: 1
+    volumes:
+      - ./src/backend/flink:/app/flink:ro
+    depends_on:
+      - kafka
+
+  taskmanager:
+    build:
+      context: .
+      dockerfile: flink.Dockerfile
+    container_name: flink_taskmanager
+    command: taskmanager
+    environment:
+      - |
+        FLINK_PROPERTIES=
+        jobmanager.rpc.address: jobmanager
+        taskmanager.numberOfTaskSlots: 2
+        parallelism.default: 1
+    depends_on:
+      - jobmanager
+    volumes:
+      - ./src/backend/flink:/app/flink:ro
+
+  flink-job:
+    build:
+      context: .
+      dockerfile: flink.Dockerfile
+    container_name: flink_job_submitter
+    depends_on:
+      - jobmanager
+    volumes:
+      - ./src/backend/flink:/app/flink:ro
+    environment:
+      - |
+        FLINK_PROPERTIES=
+        jobmanager.rpc.address: jobmanager
+        rest.address: jobmanager
+        parallelism.default: 1
+    command: >
+      bash -c "
+        # Wait for JobManager to be ready
+        until curl -s http://jobmanager:8081/overview | grep -q '\"taskmanagers\":1'; do
+          echo 'Waiting for JobManager and at least one TaskManager...'
+          sleep 5
+        done
+        
+        # Now submit the job (the entrypoint of the image)
+        /opt/flink/bin/flink run -m jobmanager:8081 -py /app/flink/highest_price.py
+      "
 
   kafdrop:
     image: obsidiandynamics/kafdrop
