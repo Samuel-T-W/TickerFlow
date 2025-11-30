@@ -90,19 +90,24 @@ def consume_stock_trade_data(stocks: list[str]):
     """
     Connects to the Alpaca data stream and subscribes to data for the given symbols.
     """
+    # TODO: test stock list should only work for dev 
+    url_override = None
+    if is_market_open():
+        print("market open")
+        stocks = DEFAULT_STOCK_LIST
+    else:
+        print("market closed")
+        stocks = TEST_STOCK_LIST
+        url_override =  "wss://stream.data.alpaca.markets/v2/test" # for streaming test market data during off hours 
+    
 
     stream = StockDataStream(
         api_key=ALPACA_API_KEY,
         secret_key=ALPACA_SECRET_KEY,
-        url_override= "wss://stream.data.alpaca.markets/v2/test", # for streaming test market data during off hours 
+        url_override= url_override,
         feed=DataFeed.IEX,
     )
     
-    # TODO: test stock list should only work for dev 
-    if is_market_open():
-        stocks = DEFAULT_STOCK_LIST
-    else:
-        stocks = TEST_STOCK_LIST
     
     for symbol in stocks:
         stream.subscribe_trades(handle_trade, symbol)

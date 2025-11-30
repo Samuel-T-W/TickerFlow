@@ -14,7 +14,6 @@ RUN apt-get update && apt-get install -y default-jdk build-essential && rm -rf /
 # Set the JAVA_HOME environment variable so that 'pemja' can find it
 ENV JAVA_HOME=/usr/lib/jvm/default-java
 
-
 # Install poetry
 RUN pip install poetry
 

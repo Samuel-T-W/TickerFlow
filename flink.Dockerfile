@@ -25,7 +25,7 @@ ENV PYTHONPATH=/opt/flink/opt/python
 
 # Install PyFlink and required Python dependencies
 # Let pip resolve protobuf version automatically to avoid conflicts with apache-beam
-RUN pip install --no-cache-dir "apache-flink==1.18.1"
+RUN pip install --no-cache-dir "apache-flink==1.18.1" "redis>=5.0.0,<6.0.0"
 
 # Let Flink know which Python executable to use
 ENV PYFLINK_CLIENT_EXECUTABLE=/usr/bin/python3

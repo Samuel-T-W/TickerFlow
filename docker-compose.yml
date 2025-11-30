@@ -92,6 +92,7 @@ services:
     container_name: flink_job_submitter
     depends_on:
       - jobmanager
+      - redis
     volumes:
       - ./src/backend/flink:/app/flink:ro
     environment:
@@ -112,6 +113,25 @@ services:
         /opt/flink/bin/flink run -m jobmanager:8081 -py /app/flink/highest_price.py
       "
 
+  redis:
+    image: redis:7-alpine
+    container_name: tickerflow_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+
+  redisinsight:
+    image: redis/redisinsight:latest
+    container_name: redisinsight
+    ports:
+      - "5540:5540"
+    volumes:
+      - redisinsight_data:/data
+    depends_on:
+      - redis
+
   kafdrop:
     image: obsidiandynamics/kafdrop
     container_name: kafdrop
@@ -121,3 +141,7 @@ services:
       KAFKA_BROKERCONNECT: "kafka:29092"
     depends_on:
       - kafka
+
+volumes:
+  redis_data:
+  redisinsight_data:
