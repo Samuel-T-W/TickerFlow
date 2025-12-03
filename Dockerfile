@@ -10,7 +10,8 @@ ENV POETRY_NO_INTERACTION 1
 WORKDIR /app
 
 # Install system dependencies, including the JDK for the 'pemja' package and build tools for C extensions
-RUN apt-get update && apt-get install -y default-jdk build-essential && rm -rf /var/lib/apt/lists/*
+# Install system dependencies, including the JDK for the 'pemja' package and build tools for C extensions
+RUN apt-get update && apt-get install -y default-jdk build-essential tzdata && rm -rf /var/lib/apt/lists/*
 # Set the JAVA_HOME environment variable so that 'pemja' can find it
 ENV JAVA_HOME=/usr/lib/jvm/default-java
 
