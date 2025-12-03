@@ -142,6 +142,34 @@ services:
     depends_on:
       - kafka
 
+  backend-api:
+    build: .
+    container_name: tickerflow_api
+    command: poetry run uvicorn src.backend.api.main:app --host 0.0.0.0 --port 8000
+    ports:
+      - "8000:8000"
+    depends_on:
+      - redis
+    volumes:
+      - ./src:/app/src
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+
+  frontend:
+    build:
+      context: ./src/frontend
+    container_name: tickerflow_frontend
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./src/frontend:/app
+      - /app/node_modules
+    environment:
+      - VITE_API_URL=http://localhost:8000
+    depends_on:
+      - backend-api
+
 volumes:
   redis_data:
   redisinsight_data:

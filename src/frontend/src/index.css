@@ -1,0 +1,8 @@
+@import "tailwindcss";
+
+@theme {
+  --color-gray-750: #2d3748;
+  /* Custom color example if needed, or just use zinc-800 */
+}
+
+/* Custom utilities if needed */

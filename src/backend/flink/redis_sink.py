@@ -29,20 +29,17 @@ class RedisWriter:
             logging.error(f"Failed to connect to Redis: {e}")
             raise
     
-    def write(self, key, data):
+    def write(self, key: str, data: dict):
         """Write the highest price for a symbol to Redis, keyed by date."""
         if not self.redis_client:
             self.open()
         
         try:
-            
-            
-            
             self.redis_client.set(key, json.dumps(data))
             logging.info(f"Stored in Redis - {key}: {data}")
             
         except Exception as e:
-            logging.error(f"Error writing to Redis for symbol {data["symbol"]}: {e}")
+            logging.error(f"Error writing to Redis for symbol {data['symbol']}: {e}")
     
     def close(self):
         """Close Redis connection."""

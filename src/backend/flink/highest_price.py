@@ -1,15 +1,34 @@
 import logging
 import sys
+import os
 from datetime import datetime, timezone
 
 from pyflink.datastream.state import ValueStateDescriptor
-from .redis import RedisWriter
+from redis_sink import RedisWriter
 
 from pyflink.common import Row
 from pyflink.common.typeinfo import Types
 from pyflink.datastream import KeyedProcessFunction, StreamExecutionEnvironment
 from pyflink.datastream.connectors.kafka import FlinkKafkaConsumer
 from pyflink.datastream.formats.json import JsonRowDeserializationSchema
+from dataclasses import dataclass, asdict
+
+@dataclass
+class SingleValueStat:
+    symbol: str
+    stat_name: str  # i.e "highest_price", "lowest_price"
+    value: float
+    trade_date: str
+    last_updated: str
+
+    def to_dict(self):
+        return {
+            "symbol": self.symbol,
+            "stat_name": self.stat_name,
+            "value": self.value,
+            "trade_date": self.trade_date,
+            "last_updated": self.last_updated
+        }
 
 
 def single_value_stocks():
@@ -18,6 +37,11 @@ def single_value_stocks():
     """
     env = StreamExecutionEnvironment.get_execution_environment()
     env.set_parallelism(1)
+
+    # Dependency files must be added so TaskManagers can find them
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    redis_sink_path = os.path.join(current_dir, 'redis_sink.py')
+    env.add_python_file(redis_sink_path)
 
     # Define the Kafka consumer properties
     kafka_props = {
@@ -72,40 +96,37 @@ class SingleValueStats(KeyedProcessFunction):
                             
     
     def process_element(self, value, ctx):
-        
-        
         # TODO: figure out how the day affects the stat value calc's since these are technically windows but of size 1 day?
         
         # Extract date from timestamp for daily partitioning
         try:
             trade_date = datetime.fromisoformat(value.timestamp.replace('Z', '+00:00')).date().isoformat()
-        except:
+        except Exception as e:
             logging.error(f"Error extracting timestamp from data:{value.timestamp} and symbol: {value.symbol}. Error: {e}")
             return
         
         # check new trade price with max price so far and only update and wirte if its greater than
-        max_price = self.max_price.value
+        max_price = self.max_price.value()
         if max_price is None:
-            max_price = 0
+            max_price = float("-inf")
         if value.price > max_price:
             self.max_price.update(value.price)
-            data = prepare_redis_value_data("highest_price", value.price, trade_date)
-            self.redis_writer.write(key=f"highest_price:{trade_date}:{value.symbol}", data=data)
+            data = prepare_redis_value_data("highest_price", value.price, trade_date, value)
+            self.redis_writer.write(key=f"highest_price:{trade_date}:{value.symbol}", data=data.to_dict())
         
         # check new trade price with min price so far and only update and wirte if its lesser than
-        min_price = self.min_price.value
+        min_price = self.min_price.value()
         if min_price is None:
-            min_price = 0
-        new_min_price = max(min_price, value.price)
+            min_price = float('inf')
         if value.price < min_price:
             self.min_price.update(value.price)
-            data = prepare_redis_value_data("lowest_price", value.price, trade_date)
-            self.redis_writer.write(key=f"lowest_price:{trade_date}:{value.symbol}", data=data)
+            data = prepare_redis_value_data("lowest_price", value.price, trade_date, value)
+            self.redis_writer.write(key=f"lowest_price:{trade_date}:{value.symbol}", data=data.to_dict())
         
         #TODO: figure out how to update latest trade only to some significant factors a 0.00001 cahnge should not cause an update
-        self.redis_writer.write(key=f"latest_trade:{trade_date}:{value.symbol}", data=data)
-        
-        
+        data = prepare_redis_value_data("latest_trade", value.price, trade_date, value)
+        logging.info(f"data:{data}: data_dict:{asdict(data)} data_dict:{data.to_dict()}")
+        self.redis_writer.write(key=f"latest_trade:{trade_date}:{value.symbol}", data=data.to_dict())
         
     
     def close(self):
@@ -113,15 +134,14 @@ class SingleValueStats(KeyedProcessFunction):
         
         
     
-def prepare_redis_value_data(stat_name: str, value: float, trade_date: str)-> dict:
-    data = {}
-    data[stat_name] = value
-    
-    # Store both the price and timestamp as a JSON object
-    data["date"] = trade_date
-    data["last_updated"] =  datetime.now(timezone.utc).isoformat()
-    
-    return data
+def prepare_redis_value_data(stat_name: str, value: float, trade_date: str, event)-> SingleValueStat:    
+    return SingleValueStat(
+        symbol = event.symbol,
+        stat_name = stat_name,
+        value = value,
+        trade_date = trade_date,
+        last_updated = datetime.now(timezone.utc).isoformat()
+    )
 
 
 if __name__ == '__main__':

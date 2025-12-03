@@ -59,13 +59,17 @@ async def handle_trade(trade):
     """
     Prints trade event and send it to kafka
     """    
-    # breakpoint()
-    print("trade:", trade)
+    # # Add debug callbacks
+    # def on_send_success(record_metadata):
+    #     print(f"DEBUG: SUCCESS sent to topic {record_metadata.topic} at offset {record_metadata.offset}")
+
+    # def on_send_error(excp):
+    #     print(f"DEBUG: ERROR sending message: {excp}")
     
     # Access the raw dictionary data from the trade object and send to kafka
     trade_data = trade.json()
     producer = get_producer()
-    producer.send("ticker_events", value=trade_data)
+    producer.send("ticker_events", value=trade_data).on_send_success().on_send_error()
 
 def is_market_open() -> bool:
     """

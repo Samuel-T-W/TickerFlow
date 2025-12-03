@@ -17,16 +17,16 @@ poetry run python scripts/test_alpaca_api.py
 poetry run python -m src.backend.tickerflow
 
 # running docker (-d detached mode)
-docker-compose up -d --build
+docker compose up -d --build
 
 # shutting down docker 
-docker-compose down
+docker compose down
 
 # view logs for docker 
-docker-compose logs -f
+docker compose logs -f
 
 # restarting only app after changes to src
-docker-compose restart app
+docker compose restart app
 
 ## Redis Commands
 
