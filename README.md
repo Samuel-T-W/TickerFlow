@@ -2,9 +2,6 @@
 
 A real-time stock price tracking system using Apache Kafka, Apache Flink, and Redis.
 
-## AI Usage
-I've used Cursor to code this project and i've used AI to provide boilerplate code, help me debug and check my code as well as write documentation. 
-
 ## Getting Started
 
 ### Prerequisites
